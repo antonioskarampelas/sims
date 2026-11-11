@@ -1,0 +1,185 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Evaporation Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: title, then the simulation canvas beside a control column, stacked on phones */
+:root{
+  --bg:#eef2f6; --panel:#ffffff; --ink:#16202c; --muted:#5a6878; --line:#d3dbe4;
+  --accent:#1d5fc4; --hot:#d8452b; --cold:#2a78d6; --water:#cfe5f6; --ice:#f4f9fc;
+  --canvas:#fbfcfe; --sky:#dce9f5; --grain:#c4861a; --earth:#c9c2b4;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e131a; --panel:#161d27; --ink:#e5eaf1; --muted:#95a3b5; --line:#2b3644;
+  --accent:#6ea3f2; --hot:#f0714f; --cold:#5aa2f2; --water:#14334c; --ice:#dbe8f2;
+  --canvas:#0b1017; --sky:#1b2737; --grain:#e3a63e; --earth:#3a352c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e131a; --panel:#161d27; --ink:#e5eaf1; --muted:#95a3b5; --line:#2b3644;
+  --accent:#6ea3f2; --hot:#f0714f; --cold:#5aa2f2; --water:#14334c; --ice:#dbe8f2;
+  --canvas:#0b1017; --sky:#1b2737; --grain:#e3a63e; --earth:#3a352c; color-scheme:dark }
+
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px;display:flex;flex-direction:column;gap:16px}
+h1{font-family:var(--f-display);font-weight:600;font-size:1.9rem;letter-spacing:.01em;margin:0;text-wrap:balance}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cap{margin:0;max-width:72ch;color:var(--muted)}
+.grid{display:grid;grid-template-columns:minmax(0,2.1fr) minmax(250px,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;max-width:100%;border-radius:6px}
+.ctrl{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label,.lbl{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.field output{font-family:var(--f-mono);color:var(--ink);text-transform:none;letter-spacing:0}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.check{display:flex;align-items:center;gap:8px;cursor:pointer}
+.check input{accent-color:var(--accent);width:18px;height:18px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button.b{font-family:var(--f-body);font-weight:700;font-size:.9rem;padding:8px 14px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+button.b.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button.b:hover{border-color:var(--accent)}
+dl.read{margin:0;display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding-top:12px;border-top:1px solid var(--line)}
+dl.read dt{color:var(--muted);font-size:.9rem}
+dl.read dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}
+.sig{margin:0;text-align:right;font-size:.85rem;color:var(--muted)}
+.seg-wrap{border:0;margin:0;padding:0;min-width:0}
+.seg-wrap legend{padding:0;margin-bottom:6px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{flex:1;display:block;text-align:center;text-transform:none;letter-spacing:0;padding:8px 6px;cursor:pointer;font-weight:700;font-size:.9rem;color:var(--muted);background:var(--bg)}
+.seg label+input+label{border-left:1px solid var(--line)}
+.seg input:checked+label{background:var(--accent);color:var(--panel)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:-2px}
+.legend{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.legend span.bar{flex:1;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--cold),var(--hot))}
+</style>
+
+<div class="wrap">
+  <header class="top"><h1>Evaporation Lab</h1><p class="sig">Designed by Dr. A. Karampelas · Built with Claude · 2026</p></header>
+
+  <!-- Evaporation -->
+  <section id="p-evap" style="display:flex;flex-direction:column;gap:12px">
+    <p class="cap">Water particles move at different speeds. Evaporation happens when a particle at the surface moves upward fast enough to escape.</p>
+    <div class="grid">
+      <div class="stage"><canvas id="cvE"></canvas>
+        <div class="legend">slow <span class="bar"></span> fast <span style="margin-left:6px">(particle speed)</span></div>
+      </div>
+      <div class="ctrl">
+        <div class="field"><label for="eT">Starting temperature <output id="eTo"></output></label>
+          <input type="range" id="eT" min="10" max="90" step="1" value="30"></div>
+        <fieldset class="field seg-wrap"><legend class="lbl">Surface area</legend>
+          <div class="seg" id="eW">
+            <input type="radio" name="eWr" id="eW0" value="0"><label for="eW0">Small</label>
+            <input type="radio" name="eWr" id="eW1" value="1" checked><label for="eW1">Medium</label>
+            <input type="radio" name="eWr" id="eW2" value="2"><label for="eW2">Large</label>
+          </div></fieldset>
+        <label class="check"><input type="checkbox" id="eFan"> Fan on (wind)</label>
+        <label class="check"><input type="checkbox" id="eH"> Heater on</label>
+        <div class="btns"><button class="b primary" id="ePause">Pause</button><button class="b" id="eRefill">Refill</button></div>
+        <dl class="read">
+          <dt>Liquid temperature</dt><dd id="rET"></dd>
+          <dt>Particles in liquid</dt><dd id="rEN"></dd>
+          <dt>Particles escaped</dt><dd id="rEE"></dd>
+          <dt>Particles back in liquid</dt><dd id="rEC"></dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function gauss(){let u=0;while(!u)u=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*Math.random());}
+const C={},P={};
+function hex(c){c=c.replace('#','');return [0,2,4].map(i=>parseInt(c.substr(i,2),16));}
+function readTokens(){const cs=getComputedStyle(document.documentElement);
+  ['ink','muted','line','accent','hot','cold','water','ice','canvas','sky','grain','earth','panel'].forEach(k=>{C[k]=cs.getPropertyValue('--'+k).trim();P[k]=hex(C[k]);});}
+function mix(a,b,f){f=clamp(f,0,1);const A=P[a],B=P[b];return 'rgb('+Math.round(A[0]+(B[0]-A[0])*f)+','+Math.round(A[1]+(B[1]-A[1])*f)+','+Math.round(A[2]+(B[2]-A[2])*f)+')';}
+readTokens();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',readTokens);
+new MutationObserver(readTokens).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+function makeCanvas(id,W,H){const cv=document.getElementById(id);cv.style.aspectRatio=W+' / '+H;const ctx=cv.getContext('2d');
+  const fit=()=>{const w=cv.clientWidth;if(!w)return;const d=window.devicePixelRatio||1;cv.width=Math.round(w*d);cv.height=Math.round(w*H/W*d);ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);};
+  new ResizeObserver(fit).observe(cv);fit();return {cv,ctx,W,H};}
+const fmt=(v,d=1)=>(v<0?'−':'')+Math.abs(v).toFixed(d);
+
+/* ---------- Evaporation ---------- */
+const EV={c:makeCanvas('cvE',600,460),bottom:440,wallTop:170,N0:260,AREA:100,VS:80,VE:2.8,CAP:200,COLL:20,r:3.2,fan:false,heat:0};
+const evL=()=>300-EV.width/2,evR=()=>300+EV.width/2,evS=()=>EV.bottom-EV.L.length*EV.AREA/EV.width,evTC=()=>EV.Tth*293-273;
+function evWalls(){EV.wallTop=Math.round(EV.bottom-EV.N0*EV.AREA/EV.width-40);}
+const SW=[180,360,540];
+function evRefill(){EV.width=SW[+document.querySelector('input[name=eWr]:checked').value];evWalls();EV.Tth=(+$('#eT').value+273)/293;EV.L=[];EV.G=[];EV.B=[];EV.boil=0;EV.esc=0;EV.cond=0;
+  const s=EV.bottom-EV.N0*EV.AREA/EV.width,sq=Math.sqrt(EV.Tth);
+  for(let i=0;i<EV.N0;i++)EV.L.push({x:evL()+EV.r+Math.random()*(EV.width-2*EV.r),y:s+EV.r+Math.random()*(EV.bottom-s-2*EV.r),vx:gauss()*sq,vy:gauss()*sq});}
+function evStep(dt){const L=EV.L,G=EV.G,VS=EV.VS,r=EV.r,VE2=EV.VE*EV.VE,lx=evL()+r,rx=evR()-r;
+  if(EV.heat>0&&L.length)EV.Tth+=EV.heat*1.8/293*dt*(EV.N0/L.length);
+  if(evTC()>100){EV.boil+=(EV.Tth-373/293)*L.length*5;EV.Tth=373/293;}
+  const cost=2*(VE2/2+EV.Tth);
+  while(EV.boil>cost&&L.length>4){EV.boil-=cost;L.splice(Math.floor(Math.random()*L.length),1);L.splice(Math.floor(Math.random()*L.length),1);
+    EV.B.push({x:lx+6+Math.random()*(rx-lx-12),y:EV.bottom-5,r:2});}
+  if(EV.heat===0)EV.boil=0;
+  let s=evS();const sq=Math.sqrt(EV.Tth);
+  for(let i=L.length-1;i>=0;i--){const p=L[i];
+    if(Math.random()<EV.COLL*dt){p.vx=gauss()*sq;p.vy=gauss()*sq;}
+    p.x+=p.vx*VS*dt;p.y+=p.vy*VS*dt;
+    if(p.x<lx){p.x=lx;p.vx=Math.abs(p.vx);}else if(p.x>rx){p.x=rx;p.vx=-Math.abs(p.vx);}
+    if(p.y>EV.bottom-r){p.y=EV.bottom-r;p.vy=-Math.abs(p.vy);}
+    if(p.y<s+r){
+      if(p.vy<0&&p.vy*p.vy>VE2){const ke=(p.vx*p.vx+p.vy*p.vy)/2;L.splice(i,1);
+        EV.Tth-=(ke-EV.Tth)/(EV.N0*EV.CAP);
+        G.push({x:p.x,y:s-r,vx:p.vx*VS,vy:-Math.sqrt(p.vy*p.vy-VE2)*VS});EV.esc++;s=evS();}
+      else{p.y=s+r;p.vy=Math.abs(p.vy);}}}
+  for(let i=EV.B.length-1;i>=0;i--){const b=EV.B[i];b.y-=55*dt;b.r=Math.min(7,b.r+6*dt);
+    if(b.y<evS()+b.r){for(let k=0;k<2;k++)G.push({x:b.x,y:evS()-r,vx:gauss()*VS*.5,vy:-(1+Math.random())*VS});EV.esc+=2;EV.B.splice(i,1);}}
+  for(let i=0;i<G.length;i++)for(let j=i+1;j<G.length;j++){const a=G[i],b=G[j],dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;
+    if(d2<4*r*r&&d2>0){const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,vr=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
+      if(vr<0){a.vx+=vr*nx;a.vy+=vr*ny;b.vx-=vr*nx;b.vy-=vr*ny;}}}
+  for(let i=G.length-1;i>=0;i--){const g=G[i];
+    if(EV.fan&&g.y<EV.wallTop)g.vx+=500*dt;
+    const px=g.x,wasIn=px>evL()&&px<evR();g.x+=g.vx*dt;g.y+=g.vy*dt;
+    if(g.y>EV.wallTop){
+      if(wasIn){if(g.x<lx){g.x=lx;g.vx=Math.abs(g.vx);}else if(g.x>rx){g.x=rx;g.vx=-Math.abs(g.vx);}}
+      else{if(g.x>evL()-r&&g.x<evR()+r){if(px<300){g.x=evL()-r;g.vx=-Math.abs(g.vx);}else{g.x=evR()+r;g.vx=Math.abs(g.vx);}}
+        if(g.y>EV.bottom-r){g.y=EV.bottom-r;g.vy=-Math.abs(g.vy);}}}
+    const s2=evS(),inNow=g.x>evL()&&g.x<evR();
+    if(inNow&&g.y>s2-r&&g.vy>0){const ke=((g.vx/VS)**2+(g.vy/VS)**2)/2+VE2/2;
+      EV.Tth+=(ke-EV.Tth)/(EV.N0*EV.CAP);const q=Math.sqrt(EV.Tth);
+      L.push({x:clamp(g.x,lx,rx),y:s2+r,vx:gauss()*q,vy:Math.abs(gauss())*q});EV.cond++;G.splice(i,1);continue;}
+    if(g.x<0||g.x>600||g.y<0)G.splice(i,1);}}
+function evDraw(){const x=EV.c.ctx,l=evL(),rr=evR(),s=evS(),r=EV.r;x.fillStyle=C.canvas;x.fillRect(0,0,600,460);
+  x.fillStyle=C.water;x.fillRect(l,s,EV.width,EV.bottom-s);
+  if(EV.heat>0){x.fillStyle=mix('line','hot',EV.heat/3);x.fillRect(l-4,EV.bottom+3,EV.width+8,9);}
+  x.strokeStyle=C.ink;x.globalAlpha=.5;x.lineWidth=1;for(const b of EV.B){x.beginPath();x.arc(b.x,b.y,b.r,0,6.283);x.stroke();}x.globalAlpha=1;
+  for(const p of EV.L){x.fillStyle=mix('cold','hot',(Math.hypot(p.vx,p.vy)/EV.VE-.4)/1.1);x.beginPath();x.arc(p.x,p.y,r,0,6.283);x.fill();}
+  for(const g of EV.G){x.fillStyle=mix('cold','hot',(Math.hypot(g.vx,g.vy)/EV.VS/EV.VE-.4)/1.1);x.beginPath();x.arc(g.x,g.y,r,0,6.283);x.fill();}
+  x.strokeStyle=C.muted;x.lineWidth=3;x.beginPath();x.moveTo(l-1.5,EV.wallTop);x.lineTo(l-1.5,EV.bottom+1.5);x.lineTo(rr+1.5,EV.bottom+1.5);x.lineTo(rr+1.5,EV.wallTop);x.stroke();
+  x.font='500 13px "Atkinson Hyperlegible",sans-serif';x.textAlign='left';
+  if(EV.fan){x.strokeStyle=C.accent;x.fillStyle=C.accent;x.lineWidth=2;
+    for(const y of [EV.wallTop-90,EV.wallTop-60,EV.wallTop-30]){x.beginPath();x.moveTo(14,y);x.lineTo(60,y);x.stroke();x.beginPath();x.moveTo(66,y);x.lineTo(56,y-5);x.lineTo(56,y+5);x.closePath();x.fill();}
+    x.fillText('wind',14,EV.wallTop-104);}
+  if(EV.heat>0){x.fillStyle=C.hot;x.textAlign='center';x.fillText(evTC()>=99.9?'boiling':'heater on',300,EV.wallTop-14);}
+  $('#rET').textContent=fmt(evTC())+' °C';$('#rEN').textContent=EV.L.length;$('#rEE').textContent=EV.esc;$('#rEC').textContent=EV.cond;}
+$('#eT').addEventListener('input',e=>{$('#eTo').textContent=e.target.value+' °C';evRefill();});
+document.querySelectorAll('input[name=eWr]').forEach(el=>el.addEventListener('change',e=>{EV.width=SW[+e.target.value];evWalls();}));
+$('#eFan').addEventListener('change',e=>EV.fan=e.target.checked);
+$('#eH').addEventListener('change',e=>{EV.heat=e.target.checked?2:0;});
+$('#eRefill').addEventListener('click',evRefill);
+$('#ePause').addEventListener('click',()=>{EV.paused=!EV.paused;$('#ePause').textContent=EV.paused?'Play':'Pause';});
+$('#eTo').textContent=$('#eT').value+' °C';
+evRefill();
+
+/* ---------- Animation loop ---------- */
+const sims={evap:{step:dt=>{if(!EV.paused)evStep(dt);},draw:evDraw}};
+let active='evap';
+let last=performance.now();
+function frame(now){const dt=Math.min(.033,(now-last)/1000);last=now;const s=sims[active];s.step(dt/2);s.step(dt/2);s.draw();requestAnimationFrame(frame);}
+Object.values(sims).forEach(s=>s.draw());
+requestAnimationFrame(frame);
+</script>
+
+</body></html>
