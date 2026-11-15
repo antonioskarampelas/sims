@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neuron Activation Lab</title>
+<style>
+/* Layout: one readable worksheet column; examples sit in tabs, each a diagram + answer controls + fold-out steps */
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --ink:#14212c; --muted:#5a6b78; --line:#d6dee5;
+  --accent:#1d6a8a; --accent-soft:#e3f0f5;
+  --on:#1f8a52; --on-soft:#e2f4ea; --off:#b8433a; --off-soft:#f8e6e4;
+  --f-display:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-body:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono:ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --surface:#16212a; --ink:#e4ecf1; --muted:#97a8b5; --line:#2b3a46;
+  --accent:#5fb3d4; --accent-soft:#1a3240;
+  --on:#4fcf8a; --on-soft:#173527; --off:#ef7d72; --off-soft:#3a1f1d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#16212a; --ink:#e4ecf1; --muted:#97a8b5; --line:#2b3a46;
+  --accent:#5fb3d4; --accent-soft:#1a3240;
+  --on:#4fcf8a; --on-soft:#173527; --off:#ef7d72; --off-soft:#3a1f1d; color-scheme:dark}
+
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(28px,5vw,40px);font-weight:800}
+h2{font-size:24px;font-weight:800}
+h3{font-size:19px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+header{display:flex;flex-direction:column;gap:10px}
+.goal{color:var(--muted);max-width:62ch}
+sub{font-size:.72em;line-height:0}
+
+section{display:flex;flex-direction:column;gap:14px}
+ul.need{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:10px}
+ol.steps>li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+ol.steps>li::before{content:counter(s);font-family:var(--f-display);font-weight:800;font-size:16px;width:30px;height:30px;border-radius:50%;
+  display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.rule{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.rule div{border-radius:10px;padding:10px 14px;font-weight:700;font-family:var(--f-mono);font-size:16px}
+.rule .r-on{background:var(--on-soft);color:var(--on)}
+.rule .r-off{background:var(--off-soft);color:var(--off)}
+.rule span{display:block;font-weight:400;color:var(--ink);font-size:15px;font-family:var(--f-body)}
+.hint{font-size:15px;color:var(--muted)}
+
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border-radius:10px;padding:8px 14px;text-align:left}
+.tab .t-tag{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.tab[aria-selected="true"] .t-tag{color:var(--accent)}
+
+.example{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px clamp(16px,4vw,28px);display:flex;flex-direction:column;gap:16px}
+.example[hidden]{display:none}
+.ex-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px}
+.tag{font-family:var(--f-mono);font-size:13px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px}
+.diagram{overflow-x:auto}
+.diagram svg{display:block;width:100%;max-width:560px;height:auto;margin:0 auto}
+svg text{fill:var(--ink);font-family:var(--f-body)}
+svg .w{font-style:italic;font-size:17px}
+svg .b{font-size:16px;fill:var(--muted)}
+svg .lbl{font-size:21px}
+svg .edge{stroke:var(--ink);stroke-width:1.6}
+svg .head{fill:var(--ink)}
+svg .node{fill:var(--surface);stroke:var(--ink);stroke-width:2.4;transition:fill .3s,stroke .3s}
+svg .node.is-on{fill:var(--on-soft);stroke:var(--on)}
+svg .node.is-off{stroke:var(--off)}
+
+.ask{display:flex;flex-direction:column;gap:10px}
+.q{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.q .who{min-width:9ch;font-weight:700}
+button{font:inherit;font-size:15px;cursor:pointer;border-radius:999px;padding:7px 14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+button:hover{border-color:var(--accent)}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.fb{font-size:15px;font-weight:700;min-height:1.4em}
+.fb.ok{color:var(--on)} .fb.no{color:var(--off)}
+
+details{border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;font-weight:700;color:var(--accent);width:max-content;max-width:100%}
+.work{margin-top:12px;display:flex;flex-direction:column;gap:14px}
+.work h4{margin:0;font-family:var(--f-display);font-size:16px;font-weight:600}
+.work ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:8px}
+.calc{display:block;font-family:var(--f-mono);font-size:15px;font-variant-numeric:tabular-nums;overflow-x:auto;white-space:nowrap;padding:2px 0}
+.res{font-weight:700}
+.res.on{color:var(--on)} .res.off{color:var(--off)}
+.controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 16px}
+.counts{display:flex;flex-wrap:wrap;gap:12px 16px}
+.ctl{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:700;color:var(--muted)}
+select{font:inherit;font-size:16px;padding:6px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);min-width:64px}
+select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--surface);font-weight:700}
+svg .pill{fill:var(--surface)}
+svg .wv{font-size:17px;font-style:italic}
+svg .bi{font-size:15px;fill:var(--muted)}
+.answer{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:12px}
+.answer .ln{font-family:var(--f-mono);font-size:15px;overflow-wrap:anywhere}
+.answer .lyr{font-family:var(--f-body);color:var(--muted);font-size:13px}
+@media (max-width:480px){.rule{grid-template-columns:1fr}
+  .q .who{width:100%}
+  svg .lbl{font-size:27px} svg .w{font-size:22px} svg .b{font-size:21px}}
+@media (prefers-reduced-motion:reduce){svg .node{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hint" style="align-self:flex-end;text-align:right">Designed by Dr. A. Karampelas · Built with Claude · 2026</div>
+    <div class="eyebrow">Artificial Intelligence</div>
+    <h1>How to Find Out if an Artificial Neuron Activates</h1>
+    <p class="goal"><strong>Goal:</strong> find out if a neuron in the hidden layer or the output layer activates.</p>
+  </header>
+
+  <section>
+    <h2>What you need</h2>
+    <ul class="need">
+      <li>The values coming into the neuron: from the input layer (i<sub>1</sub>, i<sub>2</sub>, …) or from a hidden layer (h<sub>1</sub>, h<sub>2</sub>, …)</li>
+      <li>The weight on each connection (w<sub>1</sub>, w<sub>2</sub>, …). The weight shows how reliable one neuron is for another neuron.</li>
+      <li>The neuron's bias, b. The bias shows how easily a neuron activates.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Method</h2>
+    <ol class="steps">
+      <li><div>Multiply each incoming value by the weight on its connection. Add the results.</div></li>
+      <li><div>Add the bias.</div></li>
+      <li><div>Apply the step function to the answer:
+        <div class="rule">
+          <div class="r-on">answer ≥ 0 → value = 1<span>The neuron activates.</span></div>
+          <div class="r-off">answer &lt; 0 → value = 0<span>The neuron does not activate.</span></div>
+        </div>
+      </div></li>
+    </ol>
+    <p class="hint">This rule is called the Heaviside step function.</p>
+  </section>
+
+  <section>
+    <h2>Examples</h2>
+    <p class="hint">For each example, work it out on paper first. Then pick your answer, and open the steps to check your work.</p>
+    <div class="tabs" role="tablist" aria-label="Examples" id="tabs"></div>
+    <div id="examples"></div>
+  </section>
+
+  <section id="sim">
+    <h2>Neuron simulator</h2>
+    <p class="hint">Build a network and get new numbers. Find the value of every neuron in layers 2 and 3 on paper, then check your work against the answer below the network. The number on each arrow is its weight. The b inside each neuron is its bias.</p>
+    <p>Choose how many neurons each layer has:</p>
+    <div class="controls">
+      <div class="counts">
+        <label class="ctl" for="s-l1">Layer 1 neurons (input)
+          <select id="s-l1"><option>1</option><option selected>2</option></select>
+        </label>
+        <label class="ctl" for="s-l2">Layer 2 neurons
+          <select id="s-l2"><option>1</option><option selected>2</option></select>
+        </label>
+        <label class="ctl" for="s-l3">Layer 3 neurons (0 = no layer 3)
+          <select id="s-l3"><option>0</option><option selected>1</option><option>2</option></select>
+        </label>
+      </div>
+      <button type="button" id="s-new" class="primary">New numbers</button>
+    </div>
+    <div class="example">
+      <div class="diagram sim-diagram" id="s-diagram"></div>
+      <div class="answer" id="s-ans" aria-live="polite"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+// ---------- example data ----------
+// ans: the correct value for unknown neurons; v: given value for known neurons
+const TAB_KEY = "karampelas-neuron-activation-lab-tab";
+const STEP3 = "Apply the step function to the answer";
+const EX = [
+ { tag:"1 → 1", q:"Find the value of the hidden neuron h. Does it activate?",
+   view:[560,190],
+   nodes:[{id:"i1",x:90,y:110,n:"i",s:"1",v:1},{id:"h",x:440,y:110,n:"h",ans:1,b:"−0.4"}],
+   edges:[{f:"i1",t:"h",w:"1",val:"0.6"}],
+   work:[{who:"h",lines:[
+     ["Multiply and add", "i<sub>1</sub> × w<sub>1</sub> = 1 × 0.6 = 0.6"],
+     ["Add the bias", "0.6 − 0.4 = 0.2"],
+     [STEP3, "0.2 ≥ 0", "h = 1 (h activates)", "on"]]}]},
+
+ { tag:"1 → 1 → 1", q:"Find the values of the hidden neuron h and the output neuron o. Which ones activate?",
+   hint:"Work from left to right. The value you find for h is the input for o.",
+   view:[740,190],
+   nodes:[{id:"i1",x:85,y:110,n:"i",s:"1",v:1},{id:"h",x:370,y:110,n:"h",ans:1,b:"−0.5"},{id:"o",x:655,y:110,n:"o",ans:0,b:"−0.6"}],
+   edges:[{f:"i1",t:"h",w:"1",val:"0.9"},{f:"h",t:"o",w:"2",val:"0.3"}],
+   work:[
+    {who:"h",lines:[
+     ["Multiply and add", "i<sub>1</sub> × w<sub>1</sub> = 1 × 0.9 = 0.9"],
+     ["Add the bias", "0.9 − 0.5 = 0.4"],
+     [STEP3, "0.4 ≥ 0", "h = 1 (h activates)", "on"]]},
+    {who:"o",note:"Now h = 1 is the input for o.",lines:[
+     ["Multiply and add", "h × w<sub>2</sub> = 1 × 0.3 = 0.3"],
+     ["Add the bias", "0.3 − 0.6 = −0.3"],
+     [STEP3, "−0.3 &lt; 0", "o = 0 (o does not activate)", "off"]]}]},
+
+ { tag:"2 → 1", q:"Find the value of the hidden neuron h. Does it activate?",
+   view:[560,320],
+   nodes:[{id:"i1",x:90,y:80,n:"i",s:"1",v:1},{id:"i2",x:90,y:250,n:"i",s:"2",v:1},{id:"h",x:440,y:165,n:"h",ans:1,b:"−0.8"}],
+   edges:[{f:"i1",t:"h",w:"1",val:"0.7"},{f:"i2",t:"h",w:"2",val:"0.3"}],
+   work:[{who:"h",lines:[
+     ["Multiply and add", "i<sub>1</sub>w<sub>1</sub> + i<sub>2</sub>w<sub>2</sub> = 1 × 0.7 + 1 × 0.3 = 0.7 + 0.3 = 1.0"],
+     ["Add the bias", "1.0 − 0.8 = 0.2"],
+     [STEP3, "0.2 ≥ 0", "h = 1 (h activates)", "on"]]}]},
+
+ { tag:"2 → 1", q:"Find the value of the output neuron o. Does it activate?",
+   view:[560,320],
+   nodes:[{id:"h1",x:90,y:80,n:"h",s:"1",v:1},{id:"h2",x:90,y:250,n:"h",s:"2",v:0},{id:"o",x:440,y:165,n:"o",ans:0,b:"−0.9"}],
+   edges:[{f:"h1",t:"o",w:"1",val:"0.4"},{f:"h2",t:"o",w:"2",val:"0.8"}],
+   work:[{who:"o",lines:[
+     ["Multiply and add", "h<sub>1</sub>w<sub>1</sub> + h<sub>2</sub>w<sub>2</sub> = 1 × 0.4 + 0 × 0.8 = 0.4 + 0 = 0.4"],
+     ["Add the bias", "0.4 − 0.9 = −0.5"],
+     [STEP3, "−0.5 &lt; 0", "o = 0 (o does not activate)", "off"]]}]},
+
+ { tag:"2 → 2", q:"Find the values of the hidden neurons h₁ and h₂. Which ones activate?",
+   hint:"Each neuron has its own weights and its own bias. Work on one neuron at a time.",
+   view:[560,350],
+   nodes:[{id:"i1",x:90,y:85,n:"i",s:"1",v:1},{id:"i2",x:90,y:260,n:"i",s:"2",v:0},
+          {id:"h1",x:450,y:85,n:"h",s:"1",ans:1,b:"−0.3"},{id:"h2",x:450,y:260,n:"h",s:"2",ans:0,b:"−0.4",bBelow:true}],
+   edges:[{f:"i1",t:"h1",w:"1",val:"0.5",p:.5},{f:"i2",t:"h1",w:"2",val:"0.8",p:.76},
+          {f:"i1",t:"h2",w:"3",val:"0.2",p:.24},{f:"i2",t:"h2",w:"4",val:"0.9",p:.5,below:true}],
+   work:[
+    {who:"h1",lines:[
+     ["Multiply and add", "i<sub>1</sub>w<sub>1</sub> + i<sub>2</sub>w<sub>2</sub> = 1 × 0.5 + 0 × 0.8 = 0.5 + 0 = 0.5"],
+     ["Add the bias", "0.5 − 0.3 = 0.2"],
+     [STEP3, "0.2 ≥ 0", "h<sub>1</sub> = 1 (h<sub>1</sub> activates)", "on"]]},
+    {who:"h2",lines:[
+     ["Multiply and add", "i<sub>1</sub>w<sub>3</sub> + i<sub>2</sub>w<sub>4</sub> = 1 × 0.2 + 0 × 0.9 = 0.2 + 0 = 0.2"],
+     ["Add the bias", "0.2 − 0.4 = −0.2"],
+     [STEP3, "−0.2 &lt; 0", "h<sub>2</sub> = 0 (h<sub>2</sub> does not activate)", "off"]]}]}
+];
+
+// ---------- rendering ----------
+const RX=62, RY=50;
+// shared by the examples and the simulator
+const sub = (n,s)=> s ? `${n}<tspan baseline-shift="sub" font-size="70%">${s}</tspan>` : n;
+const htmlName = (n,s)=> s ? `${n}<sub>${s}</sub>` : n;
+
+function drawSVG(ex, k){
+  const [W,H]=ex.view, by={};
+  ex.nodes.forEach(n=>by[n.id]=n);
+  let g=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Example ${k+1} network diagram">`;
+  g+=`<defs><marker id="ah${k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker></defs>`;
+  ex.edges.forEach(e=>{
+    const a=by[e.f], b=by[e.t];
+    const dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+    const r=1/Math.sqrt((ux*ux)/(RX*RX)+(uy*uy)/(RY*RY)); // distance from centre to ellipse edge along the line
+    const x1=a.x+ux*r, y1=a.y+uy*r, x2=b.x-ux*(r+2), y2=b.y-uy*(r+2);
+    g+=`<line class="edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#ah${k})"/>`;
+    const p=e.p??.45, px=x1+(x2-x1)*p, py=y1+(y2-y1)*p;
+    const d = e.below ? -26 : 10;           // positive = above the line
+    const lx=px+uy*d, ly=py-ux*d;
+    const ang=Math.atan2(dy,dx)*180/Math.PI;
+    g+=`<text class="w" text-anchor="middle" transform="translate(${lx.toFixed(1)},${ly.toFixed(1)}) rotate(${ang.toFixed(2)})">${sub("w",e.w)} = ${e.val}</text>`;
+  });
+  ex.nodes.forEach(n=>{
+    const unknown = n.ans!==undefined;
+    g+=`<ellipse class="node" id="n${k}-${n.id}" cx="${n.x}" cy="${n.y}" rx="${RX}" ry="${RY}"/>`;
+    g+=`<text class="lbl" text-anchor="middle" dominant-baseline="central" x="${n.x}" y="${n.y}">${sub(n.n,n.s)} = <tspan id="v${k}-${n.id}">${unknown?"?":n.v}</tspan></text>`;
+    if(n.b){
+      const y = n.bBelow ? n.y+RY+24 : n.y-RY-14;
+      g+=`<text class="b" text-anchor="middle" x="${n.x}" y="${y}">b = ${n.b}</text>`;
+    }
+  });
+  return g+`</svg>`;
+}
+
+function build(){
+  const host=document.getElementById("examples"), tabs=document.getElementById("tabs");
+  EX.forEach((ex,k)=>{
+    const title=`Example ${k+1}`;
+    const tab=document.createElement("button");
+    tab.type="button"; tab.className="tab"; tab.id=`tab${k}`;
+    tab.setAttribute("role","tab"); tab.setAttribute("aria-controls",`ex${k}`);
+    tab.innerHTML=`<span>${title}</span><span class="t-tag">${ex.tag}</span>`;
+    tabs.appendChild(tab);
+
+    const unknowns=ex.nodes.filter(n=>n.ans!==undefined);
+    const el=document.createElement("article");
+    el.className="example"; el.id=`ex${k}`;
+    el.setAttribute("role","tabpanel"); el.setAttribute("aria-labelledby",`tab${k}`);
+    let h=`<div class="ex-head"><h3>${title}</h3><span class="tag">${ex.tag}</span></div>
+      <p>${ex.q}</p>
+      ${ex.hint?`<p class="hint">${ex.hint}</p>`:""}
+      <div class="diagram">${drawSVG(ex,k)}</div>
+      <div class="ask">`;
+    unknowns.forEach(n=>{
+      const nm=htmlName(n.n,n.s);
+      h+=`<div class="q" data-k="${k}" data-id="${n.id}" data-ans="${n.ans}">
+        <span class="who">${nm} = ?</span>
+        <button type="button" id="b${k}-${n.id}-1" data-pick="1" aria-pressed="false">1 · activates</button>
+        <button type="button" id="b${k}-${n.id}-0" data-pick="0" aria-pressed="false">0 · does not activate</button>
+        <span class="fb" aria-live="polite"></span></div>`;
+    });
+    h+=`</div><details><summary>Show the steps</summary><div class="work">`;
+    ex.work.forEach(w=>{
+      const n=ex.nodes.find(x=>x.id===w.who);
+      if(ex.work.length>1) h+=`<h4>Neuron ${htmlName(n.n,n.s)}</h4>`;
+      if(w.note) h+=`<p class="hint">${w.note}</p>`;
+      h+=`<ol>`;
+      w.lines.forEach(l=>{
+        h+=`<li>${l[0]}:<span class="calc">${l[1]}</span>${l[2]?`<span class="res ${l[3]}">So ${l[2]}</span>`:""}</li>`;
+      });
+      h+=`</ol>`;
+    });
+    h+=`</div></details>`;
+    el.innerHTML=h;
+    host.appendChild(el);
+  });
+
+  const select=k=>{
+    EX.forEach((_,j)=>{
+      const t=document.getElementById(`tab${j}`);
+      t.setAttribute("aria-selected", j===k?"true":"false");
+      t.tabIndex = j===k?0:-1;
+      document.getElementById(`ex${j}`).hidden = j!==k;
+    });
+    try{localStorage.setItem(TAB_KEY,k)}catch(e){}
+  };
+  tabs.addEventListener("click",ev=>{const t=ev.target.closest(".tab"); if(t) select(+t.id.slice(3));});
+  tabs.addEventListener("keydown",ev=>{
+    const cur=+document.activeElement.id.slice(3); let n=null;
+    if(ev.key==="ArrowRight") n=(cur+1)%EX.length;
+    if(ev.key==="ArrowLeft") n=(cur-1+EX.length)%EX.length;
+    if(n!==null){ev.preventDefault(); select(n); document.getElementById(`tab${n}`).focus();}
+  });
+  let start=0; try{const s=+localStorage.getItem(TAB_KEY); if(s>=0&&s<EX.length) start=s;}catch(e){}
+  select(start);
+
+  host.addEventListener("click",ev=>{
+    const btn=ev.target.closest("button[data-pick]"); if(!btn) return;
+    const q=btn.closest(".q"), k=q.dataset.k, id=q.dataset.id, ans=q.dataset.ans, pick=btn.dataset.pick;
+    q.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b===btn?"true":"false"));
+    const fb=q.querySelector(".fb"), node=document.getElementById(`n${k}-${id}`), val=document.getElementById(`v${k}-${id}`);
+    if(pick===ans){
+      fb.className="fb ok"; fb.textContent="Correct.";
+      val.textContent=ans;
+      node.classList.toggle("is-on", ans==="1"); node.classList.toggle("is-off", ans==="0");
+    }else{
+      fb.className="fb no"; fb.textContent="Not quite. Open the steps and check your work.";
+      val.textContent="?"; node.classList.remove("is-on","is-off");
+    }
+  });
+}
+build();
+</script>
+
+<script>
+// ---------- simulator ----------
+(function(){
+  const selL=[1,2,3].map(n=>document.getElementById(`s-l${n}`));
+  const diagEl=document.getElementById("s-diagram"), ansEl=document.getElementById("s-ans");
+
+  const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const fmt=t=>(t<0?"−":"")+(Math.abs(t)/10).toFixed(1); // tenths -> "0.4" / "−0.4"
+
+  // all numbers kept in tenths so the sums are exact; inputs and neuron values are 0 or 1
+  function forward(sizes,inputs,W,B){
+    const vals=[inputs.slice()];
+    for(let l=1;l<sizes.length;l++){
+      const out=[];
+      for(let t=0;t<sizes[l];t++){
+        let z=B[l][t];
+        for(let s=0;s<sizes[l-1];s++) z+=vals[l-1][s]*W[l][s][t];
+        out.push(z>=0?1:0);
+      }
+      vals.push(out);
+    }
+    return vals;
+  }
+
+  function generate(){
+    const sizes=selL.map(s=>+s.value).filter(n=>n>0);   // layer 3 = 0 means a 2-layer network
+    let inputs; do{inputs=Array.from({length:sizes[0]},()=>rnd(0,1))}while(!inputs.includes(1));
+    const W=[null],B=[null];
+    for(let l=1;l<sizes.length;l++){
+      W.push(Array.from({length:sizes[l-1]},()=>Array.from({length:sizes[l]},()=>rnd(1,9))));
+      B.push(Array.from({length:sizes[l]},()=>-rnd(1,9)));
+    }
+    // names: inputs i₁…, middle layer h₁…, last layer o (or o₁…)
+    const names=[inputs.map((_,k)=>["i",k+1])];
+    for(let l=1;l<sizes.length;l++){
+      const last=l===sizes.length-1;
+      names.push(Array.from({length:sizes[l]},(_,k)=> last ? ["o", sizes[l]>1?k+1:""] : ["h", k+1]));
+    }
+    const vals=forward(sizes,inputs,W,B);
+    draw(sizes,inputs,W,B,names);
+    showAnswer(sizes,names,vals);
+  }
+
+  function draw(sizes,inputs,W,B,names){
+    const RXs=58,RYs=46,GAP=250,VS=140,PADX=75,PADY=60;
+    const maxN=Math.max(...sizes);
+    const Wd=PADX*2+GAP*(sizes.length-1), Ht=PADY*2+VS*(maxN-1);
+    const pos=sizes.map((n,l)=>Array.from({length:n},(_,k)=>({x:PADX+GAP*l, y:Ht/2+(k-(n-1)/2)*VS})));
+    let g=`<svg viewBox="0 0 ${Wd} ${Ht}" style="min-width:${Math.round(Wd*0.6)}px;max-width:${Math.round(Wd*0.85)}px" role="img" aria-label="Simulator network diagram">`;
+    g+=`<defs><marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="head" d="M0,0 L10,5 L0,10 z"/></marker></defs>`;
+    let labels="";
+    for(let l=1;l<sizes.length;l++){
+      for(let s=0;s<sizes[l-1];s++) for(let t=0;t<sizes[l];t++){
+        const a=pos[l-1][s], b=pos[l][t];
+        const dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+        const r=1/Math.sqrt((ux*ux)/(RXs*RXs)+(uy*uy)/(RYs*RYs));
+        const x1=a.x+ux*r, y1=a.y+uy*r, x2=b.x-ux*(r+2), y2=b.y-uy*(r+2);
+        g+=`<line class="edge" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" marker-end="url(#ahs)"/>`;
+        const p=(s+1)/(sizes[l-1]+1);                            // spread labels by source neuron
+        const px=x1+(x2-x1)*p, py=y1+(y2-y1)*p;
+        labels+=`<rect class="pill" x="${(px-20).toFixed(1)}" y="${(py-12).toFixed(1)}" width="40" height="24" rx="6"/>`;
+        labels+=`<text class="wv" text-anchor="middle" dominant-baseline="central" x="${px.toFixed(1)}" y="${py.toFixed(1)}">${fmt(W[l][s][t])}</text>`;
+      }
+    }
+    g+=labels;
+    sizes.forEach((n,l)=>pos[l].forEach((p,k)=>{
+      const [nm,sb]=names[l][k];
+      g+=`<ellipse class="node" cx="${p.x}" cy="${p.y}" rx="${RXs}" ry="${RYs}"/>`;
+      if(l===0){
+        g+=`<text class="lbl" text-anchor="middle" dominant-baseline="central" x="${p.x}" y="${p.y}">${sub(nm,sb)} = ${inputs[k]}</text>`;
+      }else{
+        g+=`<text class="lbl" text-anchor="middle" dominant-baseline="central" x="${p.x}" y="${p.y-11}">${sub(nm,sb)} = ?</text>`;
+        g+=`<text class="bi" text-anchor="middle" dominant-baseline="central" x="${p.x}" y="${p.y+17}">b = ${fmt(B[l][k])}</text>`;
+      }
+    }));
+    diagEl.innerHTML=g+`</svg>`;
+  }
+
+  function showAnswer(sizes,names,vals){
+    let h=`<strong>Answer</strong>`;
+    for(let l=1;l<sizes.length;l++){
+      const parts=names[l].map(([n,s],k)=>`${htmlName(n,s)} = ${vals[l][k]}`).join(", ");
+      h+=`<span class="ln"><span class="lyr">Layer ${l+1}:</span> ${parts}</span>`;
+    }
+    ansEl.innerHTML=h;
+  }
+
+  selL.forEach(s=>s.addEventListener("change",generate));
+  document.getElementById("s-new").addEventListener("click",generate);
+  generate();
+})();
+</script>
+</body>
+</html>
